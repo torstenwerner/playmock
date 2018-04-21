@@ -11,3 +11,5 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
+  flyway:
+    clean-on-validation-error: true
