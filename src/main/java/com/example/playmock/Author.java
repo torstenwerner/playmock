@@ -1,5 +1,6 @@
 package com.example.playmock;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -7,6 +8,7 @@ import javax.persistence.*;
 @Entity
 @Table(name = "author")
 @Data
+@AllArgsConstructor
 public class Author {
 
     @Id

@@ -23,4 +23,10 @@ public class Book {
     public Book(String title) {
         this.title = title;
     }
+
+    public Book(int book_id, String title, int author_id, String name) {
+        this.id = book_id;
+        this.title = title;
+        this.author = new Author(author_id, name);
+    }
 }
