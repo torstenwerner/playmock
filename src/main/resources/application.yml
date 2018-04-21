@@ -1,0 +1,13 @@
+spring:
+  datasource:
+# docker run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres -d postgres
+    url: jdbc:postgresql:postgres
+    username: postgres
+    password: postgres
+# https://hibernate.atlassian.net/browse/HHH-12368
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
