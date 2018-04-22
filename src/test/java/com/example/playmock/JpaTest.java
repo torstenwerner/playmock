@@ -1,5 +1,6 @@
 package com.example.playmock;
 
+import org.assertj.core.api.Condition;
 import org.hibernate.query.Query;
 import org.hibernate.transform.Transformers;
 import org.junit.Before;
@@ -12,10 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
-import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -28,11 +28,14 @@ public class JpaTest {
     private Author author = new Author("Hildegunst von Mythenmetz");
     private Book book = new Book("Unter Buchhaim");
 
+    private Condition<Object> managedByPersistenceContext;
+
     @Before
     public void setup() {
         book.setAuthor(author);
         entityManager.persist(author);
         entityManager.persist(book);
+        managedByPersistenceContext = new Condition<>(entityManager::contains, "managed by persistence context");
     }
 
     @Test
@@ -46,17 +49,17 @@ public class JpaTest {
 
         assertThat(entityManager.find(Book.class, book.getId()).getTitle()).isEqualTo("Testtitel");
 
-        assertThat(entityManager.contains(author)).isTrue();
+        assertThat(author).is(managedByPersistenceContext);
         entityManager.detach(author);
-        assertThat(entityManager.contains(author)).isFalse();
+        assertThat(author).isNot(managedByPersistenceContext);
 
-        assertThat(entityManager.contains(book)).isTrue();
+        assertThat(book).is(managedByPersistenceContext);
         entityManager.clear();
-        assertThat(entityManager.contains(book)).isFalse();
+        assertThat(book).isNot(managedByPersistenceContext);
 
         final Author mergedAuthor = entityManager.merge(author);
-        assertThat(entityManager.contains(author)).isFalse();
-        assertThat(entityManager.contains(mergedAuthor)).isTrue();
+        assertThat(author).isNot(managedByPersistenceContext);
+        assertThat(mergedAuthor).is(managedByPersistenceContext);
     }
 
     @Test
@@ -68,7 +71,7 @@ public class JpaTest {
                 .setParameter("author", author)
                 .getSingleResult();
         assertThat(loadedAuthor)
-                .matches(isManagedByPersistenceContext())
+                .is(managedByPersistenceContext)
                 .isSameAs(author)
                 .extracting(Author::getName).containsExactly("Dancelot von Silbendrechsler");
     }
@@ -81,7 +84,7 @@ public class JpaTest {
                 .getSingleResult();
 
         assertThat(author)
-                .matches(isManagedByPersistenceContext().negate())
+                .isNot(managedByPersistenceContext)
                 .extracting(Author::getName).containsExactly("Hildegunst von Mythenmetz");
     }
 
@@ -89,8 +92,9 @@ public class JpaTest {
     public void shouldLoadDtoEagerly() {
         final String bookDtoQuery = "select new com.example.playmock.Book(b.id, b.title, a.id, a.name) from Book b join Author a on b.author = a";
         book = entityManager.createQuery(bookDtoQuery, Book.class).getSingleResult();
-        assertThat(book.getAuthor().getName()).isEqualTo("Hildegunst von Mythenmetz");
-        assertThat(entityManager.contains(book)).isFalse();
+        assertThat(book)
+                .isNot(managedByPersistenceContext)
+                .extracting("author.name").containsExactly("Hildegunst von Mythenmetz");
     }
 
     @Test
@@ -136,21 +140,25 @@ public class JpaTest {
         entityManager.clear();
 
         final Author proxiedAuthor = entityManager.getReference(Author.class, author.getId());
-        assertThat(proxiedAuthor).isNotNull();
-        assertThat(proxiedAuthor).isNotSameAs(author);
-        assertThat(proxiedAuthor).isEqualTo(author);
+        assertThat(proxiedAuthor)
+                .isNotNull()
+                .isNotSameAs(author)
+                .isEqualTo(author);
 
         final int invalidId = author.getId() + 1;
         final Author invalidAuthor = entityManager.getReference(Author.class, invalidId);
-        assertThat(invalidAuthor).isNotNull();
-        assertThat(invalidAuthor.getId()).isEqualTo(invalidId);
-        assertThat(entityManager.contains(invalidAuthor)).isTrue();
-        assertThatThrownBy(invalidAuthor::getName)
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessage("Unable to find com.example.playmock.Author with id %d", invalidId);
+
+        assertThat(invalidAuthor)
+                .isNotNull()
+                .is(managedByPersistenceContext)
+                .has(authorIdValue(invalidId));
+
+        assertThatExceptionOfType(EntityNotFoundException.class)
+                .isThrownBy(invalidAuthor::getName)
+                .withMessageStartingWith("Unable to find com.example.playmock.Author with id");
     }
 
-    private Predicate<Author> isManagedByPersistenceContext() {
-        return entityManager::contains;
+    Condition<Author> authorIdValue(int expectedId) {
+        return new Condition<>(author -> author.getId() == expectedId, "id value " + expectedId);
     }
 }
