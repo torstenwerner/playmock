@@ -2,12 +2,14 @@ package com.example.playmock;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
 @Entity
 @Table(name = "author")
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class Author {
 

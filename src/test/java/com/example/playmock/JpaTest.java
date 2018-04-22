@@ -1,5 +1,7 @@
 package com.example.playmock;
 
+import org.hibernate.query.Query;
+import org.hibernate.transform.Transformers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,23 +47,60 @@ public class JpaTest {
     }
 
     @Test
-    public void shouldLoadAsDto() {
-        entityManager.flush();
-        entityManager.clear();
-
-        author = entityManager.createQuery("select new com.example.playmock.Author(a.id, a.name) from Author a", Author.class).getSingleResult();
+    public void shouldLoadEntity() {
+        final String authorDtoQuery = "select a from Author a";
+        author = entityManager.createQuery(authorDtoQuery, Author.class).getSingleResult();
         assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
+        assertThat(entityManager.contains(author), is(true));
+    }
+
+    @Test
+    public void shouldLoadAsDto() {
+        final String authorDtoQuery = "select new com.example.playmock.Author(a.id, a.name) from Author a";
+        author = entityManager.createQuery(authorDtoQuery, Author.class).getSingleResult();
+        assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
+        assertThat(entityManager.contains(author), is(false));
     }
 
     @Test
     public void shouldLoadDtoEagerly() {
-        entityManager.flush();
-        entityManager.clear();
-
-        book = entityManager.createQuery(
-                "select new com.example.playmock.Book(b.id, b.title, a.id, a.name) from Book b join Author a on b.author = a",
-                Book.class)
-                .getSingleResult();
+        final String bookDtoQuery = "select new com.example.playmock.Book(b.id, b.title, a.id, a.name) from Book b join Author a on b.author = a";
+        book = entityManager.createQuery(bookDtoQuery, Book.class).getSingleResult();
         assertThat(book.getAuthor().getName(), is("Hildegunst von Mythenmetz"));
+        assertThat(entityManager.contains(book), is(false));
+    }
+
+    @Test
+    public void shouldUpdateWithQuery() {
+        final String bookUpdateQuery = "update Book set title = 'Testtitel' where id = :bookId";
+        final int updateCount = entityManager.createQuery(bookUpdateQuery)
+                .setParameter("bookId", book.getId())
+                .executeUpdate();
+        assertThat(updateCount, is(1));
+
+        assertThat(entityManager.contains(book), is(true));
+        assertThat(book.getTitle(), is("Unter Buchhaim"));
+
+        entityManager.refresh(book);
+        assertThat(book.getTitle(), is("Testtitel"));
+    }
+
+    @Test
+    public void shouldLoadNatively() {
+        final String authorNativeQuery = "select * from author";
+        author = (Author) entityManager.createNativeQuery(authorNativeQuery, Author.class).getSingleResult();
+        assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
+        assertThat(entityManager.contains(author), is(true));
+    }
+
+    @Test
+    public void shouldLoadDtoNatively() {
+        final String authorNativeQuery = "select a.author_id as id, a.name from author a";
+        author = (Author) entityManager.createNativeQuery(authorNativeQuery)
+                .unwrap(Query.class)
+                .setResultTransformer(Transformers.aliasToBean(Author.class))
+                .getSingleResult();
+        assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
+        assertThat(entityManager.contains(author), is(false));
     }
 }
