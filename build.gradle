@@ -31,7 +31,8 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
 
     runtime 'org.postgresql:postgresql',
-            'org.flywaydb:flyway-core'
+            'org.flywaydb:flyway-core',
+            'com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.4.0'
 
     testCompile 'org.springframework.boot:spring-boot-starter-test'
 }

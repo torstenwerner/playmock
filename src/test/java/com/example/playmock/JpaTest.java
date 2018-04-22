@@ -44,20 +44,36 @@ public class JpaTest {
         entityManager.flush();
 
         assertThat(entityManager.find(Book.class, book.getId()).getTitle(), is("Testtitel"));
+
+        assertThat(entityManager.contains(author), is(true));
+        entityManager.detach(author);
+        assertThat(entityManager.contains(author), is(false));
+
+        assertThat(entityManager.contains(book), is(true));
+        entityManager.clear();
+        assertThat(entityManager.contains(book), is(false));
+
+        final Author mergedAuthor = entityManager.merge(author);
+        assertThat(entityManager.contains(author), is(false));
+        assertThat(entityManager.contains(mergedAuthor), is(true));
     }
 
     @Test
     public void shouldLoadEntity() {
-        final String authorDtoQuery = "select a from Author a";
-        author = entityManager.createQuery(authorDtoQuery, Author.class).getSingleResult();
+        final String authorDtoQuery = "select a from Author a where a = :author";
+        author = entityManager.createQuery(authorDtoQuery, Author.class)
+                .setParameter("author", author)
+                .getSingleResult();
         assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
         assertThat(entityManager.contains(author), is(true));
     }
 
     @Test
     public void shouldLoadAsDto() {
-        final String authorDtoQuery = "select new com.example.playmock.Author(a.id, a.name) from Author a";
-        author = entityManager.createQuery(authorDtoQuery, Author.class).getSingleResult();
+        final String authorDtoQuery = "select new com.example.playmock.Author(a.id, a.name) from Author a where a = :author";
+        author = entityManager.createQuery(authorDtoQuery, Author.class)
+                .setParameter("author", author)
+                .getSingleResult();
         assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
         assertThat(entityManager.contains(author), is(false));
     }
@@ -87,17 +103,20 @@ public class JpaTest {
 
     @Test
     public void shouldLoadNatively() {
-        final String authorNativeQuery = "select * from author";
-        author = (Author) entityManager.createNativeQuery(authorNativeQuery, Author.class).getSingleResult();
+        final String authorNativeQuery = "select * from author where author_id = :authorId";
+        author = (Author) entityManager.createNativeQuery(authorNativeQuery, Author.class)
+                .setParameter("authorId", author.getId())
+                .getSingleResult();
         assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
         assertThat(entityManager.contains(author), is(true));
     }
 
     @Test
     public void shouldLoadDtoNatively() {
-        final String authorNativeQuery = "select a.author_id as id, a.name from author a";
+        final String authorNativeQuery = "select a.author_id as id, a.name from author a where a.author_id = :authorId";
         author = (Author) entityManager.createNativeQuery(authorNativeQuery)
                 .unwrap(Query.class)
+                .setParameter("authorId", author.getId())
                 .setResultTransformer(Transformers.aliasToBean(Author.class))
                 .getSingleResult();
         assertThat(author.getName(), is("Hildegunst von Mythenmetz"));

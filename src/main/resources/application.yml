@@ -7,11 +7,22 @@ spring:
   jpa:
     properties:
       hibernate:
+        use_sql_comments: true
         jdbc:
           lob:
 # https://hibernate.atlassian.net/browse/HHH-12368
             non_contextual_creation: true
-    show-sql: true
   flyway:
 # FOR DEVELOPMENT, NOT FOR PRODUCTION!
     clean-on-validation-error: true
+
+decorator:
+  datasource:
+    datasource-proxy:
+      logging: slf4j
+      query:
+        logger-name: com.example.playmock.sql
+
+logging:
+  level:
+    com.example.playmock.sql: debug
