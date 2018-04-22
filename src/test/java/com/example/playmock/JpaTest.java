@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Tuple;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -132,6 +133,15 @@ public class JpaTest {
                 .getSingleResult();
         assertThat(author.getName()).isEqualTo("Hildegunst von Mythenmetz");
         assertThat(entityManager.contains(author)).isFalse();
+    }
+
+    @Test
+    public void shouldLoadTupleNatively() {
+        final String authorNativeQuery = "select a.author_id as id, a.name from author a where a.author_id = :authorId";
+        final Tuple tuple = (Tuple) entityManager.createNativeQuery(authorNativeQuery, Tuple.class)
+                .setParameter("authorId", author.getId())
+                .getSingleResult();
+        assertThat(tuple.get("name", String.class)).isEqualTo("Hildegunst von Mythenmetz");
     }
 
     @Test
