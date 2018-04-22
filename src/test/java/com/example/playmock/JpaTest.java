@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
+import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,10 +67,10 @@ public class JpaTest {
         final Author loadedAuthor = entityManager.createQuery(authorDtoQuery, Author.class)
                 .setParameter("author", author)
                 .getSingleResult();
-        assertThat(loadedAuthor.getName()).isEqualTo("Dancelot von Silbendrechsler");
-        assertThat(entityManager.contains(loadedAuthor)).isTrue();
-
-        assertThat(loadedAuthor).isSameAs(author);
+        assertThat(loadedAuthor)
+                .matches(isManagedByPersistenceContext())
+                .isSameAs(author)
+                .extracting(Author::getName).containsExactly("Dancelot von Silbendrechsler");
     }
 
     @Test
@@ -78,8 +79,10 @@ public class JpaTest {
         author = entityManager.createQuery(authorDtoQuery, Author.class)
                 .setParameter("author", author)
                 .getSingleResult();
-        assertThat(author.getName()).isEqualTo("Hildegunst von Mythenmetz");
-        assertThat(entityManager.contains(author)).isFalse();
+
+        assertThat(author)
+                .matches(isManagedByPersistenceContext().negate())
+                .extracting(Author::getName).containsExactly("Hildegunst von Mythenmetz");
     }
 
     @Test
@@ -145,5 +148,9 @@ public class JpaTest {
         assertThatThrownBy(invalidAuthor::getName)
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Unable to find com.example.playmock.Author with id %d", invalidId);
+    }
+
+    private Predicate<Author> isManagedByPersistenceContext() {
+        return entityManager::contains;
     }
 }
