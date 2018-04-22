@@ -140,7 +140,7 @@ public class JpaTest {
         entityManager.clear();
 
         final Author proxiedAuthor = entityManager.getReference(Author.class, author.getId());
-        assertThat(proxiedAuthor)
+        assertThat(proxiedAuthor).as("a proxy reference to author")
                 .isNotNull()
                 .isNotSameAs(author)
                 .isEqualTo(author);
