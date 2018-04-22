@@ -1,5 +1,6 @@
 package com.example.playmock;
 
+import org.assertj.core.api.Assertions;
 import org.hibernate.query.Query;
 import org.hibernate.transform.Transformers;
 import org.junit.Before;
@@ -10,10 +11,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringRunner.class)
@@ -60,12 +62,16 @@ public class JpaTest {
 
     @Test
     public void shouldLoadEntity() {
+        author.setName("Dancelot von Silbendrechsler");
+
         final String authorDtoQuery = "select a from Author a where a = :author";
-        author = entityManager.createQuery(authorDtoQuery, Author.class)
+        final Author loadedAuthor = entityManager.createQuery(authorDtoQuery, Author.class)
                 .setParameter("author", author)
                 .getSingleResult();
-        assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
-        assertThat(entityManager.contains(author), is(true));
+        assertThat(loadedAuthor.getName(), is("Dancelot von Silbendrechsler"));
+        assertThat(entityManager.contains(loadedAuthor), is(true));
+
+        assertThat(loadedAuthor, sameInstance(author));
     }
 
     @Test
@@ -121,5 +127,25 @@ public class JpaTest {
                 .getSingleResult();
         assertThat(author.getName(), is("Hildegunst von Mythenmetz"));
         assertThat(entityManager.contains(author), is(false));
+    }
+
+    @Test
+    public void shouldReference() {
+        entityManager.flush();
+        entityManager.clear();
+
+        final Author proxiedAuthor = entityManager.getReference(Author.class, author.getId());
+        assertThat(proxiedAuthor, notNullValue());
+        assertThat(proxiedAuthor, not(sameInstance(author)));
+        assertThat(proxiedAuthor, is(author));
+
+        final int invalidId = author.getId() + 1;
+        final Author invalidAuthor = entityManager.getReference(Author.class, invalidId);
+        assertThat(invalidAuthor, notNullValue());
+        assertThat(invalidAuthor.getId(), is(invalidId));
+        assertThat(entityManager.contains(invalidAuthor), is(true));
+        assertThatThrownBy(invalidAuthor::getName)
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage("Unable to find com.example.playmock.Author with id %d", invalidId);
     }
 }
