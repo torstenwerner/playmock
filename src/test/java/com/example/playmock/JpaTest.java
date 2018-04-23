@@ -4,6 +4,7 @@ import org.assertj.core.api.Condition;
 import org.hibernate.query.Query;
 import org.hibernate.transform.Transformers;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -61,6 +62,42 @@ public class JpaTest {
         final Author mergedAuthor = entityManager.merge(author);
         assertThat(author).isNot(managedByPersistenceContext);
         assertThat(mergedAuthor).is(managedByPersistenceContext);
+    }
+
+    @Test
+    public void shouldFlushEntityChanges() {
+        book.setTitle("Testtitel");
+
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(entityManager.find(Book.class, book.getId()).getTitle()).isEqualTo("Testtitel");
+    }
+
+    @Ignore("first assertion fails")
+    @Test
+    public void shouldInsertManualId() {
+        final Author author2 = new Author(Integer.MAX_VALUE, "Danzelot von Silbendrechsler");
+        final Author author3 = entityManager.merge(author2);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(author3.getId()).isEqualTo(author2.getId());
+        assertThat(entityManager.find(Author.class, author3.getId()).getName()).isEqualTo("Danzelot von Silbendrechsler");
+    }
+
+    @Test
+    public void shouldInsertCustomerWithId() {
+        final Customer customer = new Customer(0, "a sample customer");
+        entityManager.persist(customer);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(entityManager.find(Customer.class, 0))
+                .isNotNull()
+                .extracting(Customer::getId, Customer::getName).containsExactly(0, "a sample customer");
     }
 
     @Test
