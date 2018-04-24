@@ -18,5 +18,8 @@ public interface BookRepository extends Repository<Book, Integer> {
     void insert(Author author);
 
     @Query(value = "select b.title, a.name as authorName from book b join author a on b.author_id = a.author_id where b.book_id = :bookId", nativeQuery = true)
-    BookSummary findSummary(int bookId);
+    BookProjection findProjection(int bookId);
+
+    @Query("select new com.example.playmock.BookDto(b.title, a.name) from Book b join Author a on b.author = a where b.id = :bookId")
+    BookDto findDto(int bookId);
 }

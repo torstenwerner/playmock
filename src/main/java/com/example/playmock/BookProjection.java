@@ -1,6 +1,6 @@
 package com.example.playmock;
 
-public interface BookSummary {
+public interface BookProjection {
     String getTitle();
     String getAuthorName();
 }

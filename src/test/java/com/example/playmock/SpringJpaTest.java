@@ -30,10 +30,16 @@ public class SpringJpaTest {
                 .extracting("title", "author.name")
                 .containsExactly("Unter Buchhaim", "Hildegunst von Mythenmetz");
 
-        final BookSummary summary = bookRepository.findSummary(26);
-        assertThat(summary)
+        final BookProjection bookProjection = bookRepository.findProjection(26);
+        assertThat(bookProjection)
                 .isNotNull()
-                .extracting(BookSummary::getTitle, BookSummary::getAuthorName)
+                .extracting(BookProjection::getTitle, BookProjection::getAuthorName)
+                .containsExactly("Unter Buchhaim", "Hildegunst von Mythenmetz");
+
+        final BookDto bookDto = bookRepository.findDto(26);
+        assertThat(bookDto)
+                .isNotNull()
+                .extracting(BookDto::getTitle, BookDto::getAuthorName)
                 .containsExactly("Unter Buchhaim", "Hildegunst von Mythenmetz");
     }
 }
