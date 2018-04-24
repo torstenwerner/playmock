@@ -68,6 +68,8 @@ jooq {
                 records = true
                 immutablePojos = true
                 fluentSetters = true
+                daos = true
+                pojosEqualsAndHashCode = true
             }
             target {
                 packageName = 'com.example.playmock.jooq'
