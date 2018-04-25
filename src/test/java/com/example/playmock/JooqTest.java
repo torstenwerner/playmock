@@ -6,6 +6,8 @@ import com.example.playmock.jooq.tables.records.AuthorRecord;
 import lombok.NonNull;
 import lombok.Value;
 import org.jooq.DSLContext;
+import org.jooq.Record2;
+import org.jooq.SelectConditionStep;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static com.example.playmock.jooq.tables.Author.AUTHOR;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.val;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -75,6 +79,9 @@ public class JooqTest {
         assertThat(
                 authorRepository.insert(authorEntity))
                 .isEqualTo(1);
+        assertThat(
+                authorRepository.copy(authorEntity.getAuthorId(), 27))
+                .isEqualTo(1);
     }
 
     @Test
@@ -104,6 +111,8 @@ interface AuthorRepository {
     default int insert(AuthorEntity authorEntity) {
         return insert(authorEntity.getAuthorId(), authorEntity.getName());
     }
+
+    int copy(Integer sourceId, Integer targetId);
 }
 
 @Repository
@@ -116,6 +125,17 @@ class DefaultAuthorRepository implements AuthorRepository {
     public int insert(Integer authorID, String name) {
         return sql.insertInto(AUTHOR, AUTHOR.AUTHOR_ID, AUTHOR.NAME)
                 .values(authorID, name)
+                .execute();
+    }
+
+    @Override
+    public int copy(Integer sourceId, Integer targetId) {
+        final SelectConditionStep<Record2<Integer, String>> subselect = select(
+                val(targetId).as(AUTHOR.AUTHOR_ID), AUTHOR.NAME)
+                .from(AUTHOR)
+                .where(AUTHOR.AUTHOR_ID.eq(sourceId));
+        return sql.insertInto(AUTHOR)
+                .select(subselect)
                 .execute();
     }
 }
