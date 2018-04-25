@@ -37,6 +37,8 @@ dependencies {
             'com.github.gavlyukovskiy:datasource-proxy-spring-boot-starter:1.4.0'
 
     testCompile 'org.springframework.boot:spring-boot-starter-test'
+
+    testCompileOnly 'org.projectlombok:lombok'
 }
 
 wrapper {
