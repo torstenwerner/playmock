@@ -1,6 +1,6 @@
 package com.example.playmock.enumfun;
 
-import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static java.lang.String.format;
 
@@ -14,11 +14,11 @@ public enum GreetingPrefix {
         this.prefix = prefix;
     }
 
-    public Supplier<String> newGreeter(String name) {
+    public UnaryOperator<String> newGreeter(String name) {
         return new Greeter(name);
     }
 
-    private class Greeter implements Supplier<String> {
+    private class Greeter implements UnaryOperator<String> {
         private Greeter(String name) {
             this.name = name;
         }
@@ -26,8 +26,8 @@ public enum GreetingPrefix {
         private final String name;
 
         @Override
-        public String get() {
-            return format("%s %s!", prefix, name);
+        public String apply(String punctuation) {
+            return format("%s %s%s", prefix, name, punctuation);
         }
     }
 }
