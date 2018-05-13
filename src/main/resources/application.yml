@@ -15,7 +15,6 @@ spring:
   flyway:
 # FOR DEVELOPMENT, NOT FOR PRODUCTION!
     clean-on-validation-error: true
-
 decorator:
   datasource:
     datasource-proxy:
@@ -26,3 +25,9 @@ decorator:
 logging:
   level:
     com.example.playmock.sql: debug
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
