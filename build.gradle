@@ -29,6 +29,7 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-web',
             'org.springframework.boot:spring-boot-starter-data-jpa',
             'org.springframework.boot:spring-boot-starter-actuator',
+            'io.micrometer:micrometer-registry-prometheus',
             'org.jooq:jooq'
 
     compileOnly 'org.projectlombok:lombok'
